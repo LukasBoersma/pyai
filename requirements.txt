@@ -1,0 +1,4 @@
+git+https://github.com/numba/llvmlite@dbc900d
+numba
+Theano>=0.8.0rc1
+lasagne
