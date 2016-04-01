@@ -9,10 +9,10 @@ import argparse
 
 parser = argparse.ArgumentParser("Creates a NN with given properties")
 parser.add_argument("--layer_sizes", help="list of layer sizes [n0, n1,...]")
-parser.add_argument("--learning_rate",type=float)
-parser.add_argument("--momentum",type=float)
-parser.add_argument("--epochs", help="specifies number of epochs for learning",type=int)
-parser.add_argument("--training_file", help="training data file name")
+parser.add_argument("--learning_rate",type=float, default=0.01)
+parser.add_argument("--momentum",type=float, default=0.5)
+parser.add_argument("--epochs", help="specifies number of epochs for learning",type=int,default=1)
+parser.add_argument("--training_file", help="training data file name", default="data500.gz")
 parser.add_argument("--ai_file", help="load AI from given file")
 
 args = parser.parse_args()
@@ -24,30 +24,6 @@ if args.layer_sizes:
     print("customn layer size")
     layer_sizes = args.layer_sizes
 
-learning_rate = learning_rate=0.01
-if args.learning_rate:
-    print("customn learning rate")
-    learning_rate = args.learning_rate
-
-momentum=0.9
-if args.momentum:
-    print("customn momentum")
-    momentum = args.momentum
-
-epochs=1
-if args.epochs:
-    print("customn epochs")
-    epochs = args.epochs
-
-training_file = "data_clever.txt"
-if args.training_file:
-    print("customn trainings data")
-    training_file = args.training_file
-
-
-
-#td = samples.load("data_random_4x4.txt.gz")
-
 #create AI
 ai = neural.NeuralAI()
 #ai = ai.read_model_data("best_ai")
@@ -58,7 +34,7 @@ if args.ai_file:
 else:
     td = samples.load(training_file)
     print("learning")
-    ai.learn_epoch(td,epochs)
+    ai.learn_epoch(td,args.epochs)
 
 
 def shuffle():
