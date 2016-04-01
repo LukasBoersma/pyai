@@ -57,6 +57,31 @@ def create_training_data(count):
     print("generated %d samples" % count)
     return samples
 
+def create_training_data_one_per_game(count):
+    samples = []
+    game_count = 0
+    while len(samples) < count:
+        game = connectfour.Game()
+        game_count += 1
+        #print("game %d, count %d" % (game_count, len(samples)))
+
+        current_game_history = []
+        while game.find_winner() == connectfour.FIELD_EMPTY and not game.is_draw():
+            current_game_history.append((field_vector(game), score_vector(game, 1)))
+
+            # Player 1 move
+            game.clever_move(1)
+            if game.find_winner() != connectfour.FIELD_EMPTY or game.is_draw():
+                break
+            # Player 2 move
+            game.clever_move(2)
+        state_nr = random.randint(0, len(current_game_history)-1)
+        samples.append(current_game_history[state_nr])
+    random.shuffle(samples)
+    print("generated %d samples" % count)
+    return samples
+
+    
 def create_training_parallel(count):
     pool_size = 8
     batch_count = pool_size * 5
