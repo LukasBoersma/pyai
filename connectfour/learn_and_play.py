@@ -25,14 +25,14 @@ if args.layer_sizes:
     layer_sizes = args.layer_sizes
 
 #create AI
-ai = neural.NeuralAI()
+ai = neural.NeuralAI(layer_sizes=layer_sizes, learning_rate=args.learning_rate, momentum=args.momentum)
 #ai = ai.read_model_data("best_ai")
 
 if args.ai_file:
     print("reading")
     ai.read_model_data(args.ai_file)
 else:
-    td = samples.load(training_file)
+    td = samples.load(args.training_file)
     print("learning")
     ai.learn_epoch(td,args.epochs)
 
