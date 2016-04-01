@@ -1,8 +1,8 @@
 reset
 list = system('ls data/momentum*')
 
-set term png
-set output 'momentum.png'
+set term svg
+set output 'momentum.svg'
 
 set datafile separator ";"
 
