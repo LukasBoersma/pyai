@@ -1,85 +1,69 @@
-import connectfour
+import connectfour as cf
 import samples
 
 import neural
 import random
-from multiprocessing.pool import Pool
+import play
 
-td = samples.load("data_random_4x4.txt.gz")
+import argparse
 
+parser = argparse.ArgumentParser("Creates a NN with given properties")
+parser.add_argument("--layer_sizes", help="list of layer sizes [n0, n1,...]")
+parser.add_argument("--learning_rate",type=float)
+parser.add_argument("--momentum",type=float)
+parser.add_argument("--epochs", help="specifies number of epochs for learning",type=int)
+parser.add_argument("--training_file", help="training data file name")
+parser.add_argument("--ai_file", help="load AI from given file")
+
+args = parser.parse_args()
+
+#set default values to known parameters
+total_field_size = cf.SIZE_X*cf.SIZE_Y
+layer_sizes = [total_field_size*3, total_field_size*2, total_field_size,cf.SIZE_X]
+if args.layer_sizes:
+    print("customn layer size")
+    layer_sizes = args.layer_sizes
+
+learning_rate = learning_rate=0.01
+if args.learning_rate:
+    print("customn learning rate")
+    learning_rate = args.learning_rate
+
+momentum=0.9
+if args.momentum:
+    print("customn momentum")
+    momentum = args.momentum
+
+epochs=1
+if args.epochs:
+    print("customn epochs")
+    epochs = args.epochs
+
+training_file = "data_clever.txt"
+if args.training_file:
+    print("customn trainings data")
+    training_file = args.training_file
+
+
+
+#td = samples.load("data_random_4x4.txt.gz")
+
+#create AI
 ai = neural.NeuralAI()
+#ai = ai.read_model_data("best_ai")
+
+if args.ai_file:
+    print("reading")
+    ai.read_model_data(args.ai_file)
+else:
+    td = samples.load(training_file)
+    print("learning")
+    ai.learn_epoch(td,epochs)
+
 
 def shuffle():
     print("shuffling")
     random.shuffle(td)
-
-def play(count=300, clever=True):
-    wins = [0,0]
-    invalid = 0
-
-    win_percent = 0
-
-    show_gamestate = False
-
-    for i in range (count):
-        game = connectfour.Game()
-        while game.find_winner() == connectfour.FIELD_EMPTY and not game.is_draw():
-            move = ai.move(samples.field_vector(game))
-            try:
-                game.drop_piece(move,1)
-            except Exception:
-                invalid += 1
-                break
-
-            if show_gamestate:
-                print("Neural AI places a stone")
-                game.print_state()
-
-
-            if game.find_winner() != connectfour.FIELD_EMPTY:
-                break
-
-            if clever:
-                game.clever_move(2, 1)
-            else:
-                game.random_move(2)
-
-            if show_gamestate:
-                print("Traditional AI places a stone")
-                print("")
-                game.print_state()
-                print("============================")
-
-        if not game.is_draw():
-            #print("Draw! Nobody wins.")
-        #else:
-            #print("And the winner is " + str(game.find_winner()))
-            if game.find_winner() == 1:
-                wins[0] += 1
-            elif game.find_winner() == 2:
-                wins[1] += 1 
-    win_percent = 100*float(wins[0]) / (i+1)
-    #print("Current score: (Player 1) " +str(wins[0]) + " : " + str(wins[1])    + " (Player 2). Invalid: " + str(invalid) + "    [" + str(win_percent) + "%]")
-    print("Score: (Player 1) %d : %d (Player 2). Invalid: %d, Wins: %.2f" % (wins[0], wins[1], invalid, win_percent))
-    return win_percent
-
-pool_size = 8
-batch_count = pool_size# * 3
-pool = Pool(pool_size)
-
-def play_parallel(count=300, clever=True):
-
-    results = []
-    for i in range(batch_count):
-        results.append(pool.apply_async(play, (count/batch_count,clever)))
-
-    outputs = []
-    for r in results:
-        outputs.append(r.get(1000))
-
-    avg_score = sum(outputs) / len(outputs)
-    print("Avg score: %.2f"  % avg_score)
-    return avg_score
 
 def learn():
     print("learning")
@@ -92,34 +76,36 @@ def read():
     print("reading")
     ai.read_model_data("ai")
 
-learn_new = True
+play.play(ai, 100, clever=True)
 
-if learn_new:
-    
-    best_score = -10
-    clever = False
-
-    for epoch in range(30000):
-        print("============================")
-        print(">>>>>    Epoch %d" % epoch)
-        print("============================")
-        print("(current best " + str(best_score) + ")")
-       
-        #shuffle()
-        #learn()
-        ai.evolve()
-        if best_score > 75 and not clever:
-            clever = True
-            best_score = -1
-
-        current_score = play_parallel(300, clever)
-        if current_score > best_score:
-            print("New record")
-            ai.write_model_data("best_ai_t.bin")
-            best_score = current_score
-        else:
-            ai.read_model_data("best_ai_t.bin")
-            
-else:
-    read()
-    play()
+#learn_new = True
+#
+# if learn_new:
+#
+#     best_score = -10
+#     clever = False
+#
+#     for epoch in range(30000):
+#         print("============================")
+#         print(">>>>>    Epoch %d" % epoch)
+#         print("============================")
+#         print("(current best " + str(best_score) + ")")
+#
+#         #shuffle()
+#         #learn()
+#         ai.evolve()
+#         if best_score > 75 and not clever:
+#             clever = True
+#             best_score = -1
+#
+#         current_score = play_parallel(ai, 300, clever)
+#         # if current_score > best_score:
+#         #     print("New record")
+#         #     ai.write_model_data("best_ai_t.bin")
+#         #     best_score = current_score
+#         # else:
+#         #     ai.read_model_data("best_ai_t.bin")
+#
+# # else:
+# #     read()
+# #     play()
