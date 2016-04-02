@@ -133,7 +133,11 @@ class NeuralAI:
 
     @staticmethod
     def load_json(filename):
-        f = open(filename,'r')
+
+        if filename.endswith('.gz'):
+            f = gzip.open(filename,'r')
+        else:
+            f = open(filename,'r')
         dic = json.load(f)
 
         depth = len(dic['Layers'])
@@ -149,13 +153,26 @@ class NeuralAI:
         #import ipdb;ipdb.set_trace()
         # sets weights in last layer of network
         #print(ai.l_out.W.get_value())
-        new_weights = numpy.reshape(dic['Layers'][1]['Weights']['Values'], (layer_sizes[-2],layer_sizes[-1]),'C')
-        #print (new_weights)
-        ai.l_out.W.set_value(new_weights)
-        #print(ai.l_out.W.get_value())
+        #set weights for hidden layers
+        for layer in range(len(ai.l_hidden)):
+            #get weights from dictionary that connect the current hidden layer to the previous layer
+            #the hidden layers in ai.l_hidden are indexed from 0 to len(ai.l_hidden)
+            #in c# layer[0] is the input layer. In accordance with this layer_sizes[0] is the size of input layer
+            print( (layer_sizes[layer],layer_sizes[layer+1]))
+            new_weights = numpy.reshape(dic['Layers'][layer+1]['Weights']['Values'], (layer_sizes[layer],layer_sizes[layer+1]),'C')
+            #print (new_weights)
+            ai.l_hidden[layer].W.set_value(new_weights)
+            #print(ai.l_out.W.get_value())
 
-        #sets bias in last layer of network
+            #sets bias in current layer of network
+            #warning c# implementation does not support bias so far
+            new_bias = [0]*layer_sizes[layer+1]
+            ai.l_hidden[layer].b.set_value(new_bias)
+            #print(ai.l_out.b.get_value())
+
+        # handle connection last-hidden-layer -> output-layer
+        new_weights = numpy.reshape(dic['Layers'][-1]['Weights']['Values'], (layer_sizes[-2],layer_sizes[-1]),'C')
+        ai.l_out.W.set_value(new_weights)
         new_bias = [0]*layer_sizes[-1]
         ai.l_out.b.set_value(new_bias)
-        print(ai.l_out.b.get_value())
         return ai
