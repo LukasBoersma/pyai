@@ -36,8 +36,6 @@ class NeuralAI:
             for l in range(2,len(layer_sizes)-1):
                 self.l_hidden.append(L.layers.DenseLayer(self.l_hidden[-1], num_units= layer_sizes[l] ))
 
-            #self.l_hidden2 = L.layers.DenseLayer(self.l_hidden1, num_units= total_field_size )
-            #self.l_hidden3 = L.layers.DenseLayer(self.l_hidden2, num_units= cf.SIZE_X*4 )
             self.l_out = L.layers.DenseLayer(self.l_hidden[-1], num_units=layer_sizes[-1])
 
         # define a function f that maps an input input_var to an output reaction
@@ -148,56 +146,16 @@ class NeuralAI:
         # mild warning, this learning parameters could cause problems when comparing this implementation to c#
         ai = NeuralAI(layer_sizes=layer_sizes,learning_rate=0.01,momentum=0,batch_size=1)
 
-        # self.input_var = T.tensor.matrix('input_var')
-        # if len(layer_sizes) < 2:
-        #     raise Exception("Error while reading: You need to specify at least 2 layers")
-        #
-        # self.l_in = L.layers.InputLayer(shape=(batch_size,layer_sizes[0]), input_var = self.input_var)
-        #
-        # self.l_hidden = []
-        # #in two-layer case the output layer is connected directly to the input layer
-        # self.l_out = L.layers.DenseLayer(self.l_in, num_units=layer_sizes[-1])
-        # # if len(layer_sizes) > 2:
-        # #     #first hidden layer is special as it is connected to input layer
-        # #     self.l_hidden.append( L.layers.DenseLayer(self.l_in, num_units= layer_sizes[1] ) )
-        # #     # three layer have been constructed so far:
-        # #     # input, first hidden layer, output (output will be changed later)
-        # #     for l in range(2,len(layer_sizes)-1):
-        # #         self.l_hidden.append(L.layers.DenseLayer(self.l_hidden[-1], num_units= layer_sizes[l] ))
-        # #
-        # #     #self.l_hidden2 = L.layers.DenseLayer(self.l_hidden1, num_units= total_field_size )
-        # #     #self.l_hidden3 = L.layers.DenseLayer(self.l_hidden2, num_units= cf.SIZE_X*4 )
-        # #     self.l_out = L.layers.DenseLayer(self.l_hidden[-1], num_units=layer_sizes[-1])
-        #
-        # #for l_hid in l_hidden:
-
         #import ipdb;ipdb.set_trace()
         # sets weights in last layer of network
-        print(ai.l_out.W.get_value())
+        #print(ai.l_out.W.get_value())
         new_weights = numpy.reshape(dic['Layers'][1]['Weights']['Values'], (layer_sizes[-2],layer_sizes[-1]),'C')
-        print (new_weights)
+        #print (new_weights)
         ai.l_out.W.set_value(new_weights)
-        print(ai.l_out.W.get_value())
+        #print(ai.l_out.W.get_value())
 
         #sets bias in last layer of network
         new_bias = [0]*layer_sizes[-1]
         ai.l_out.b.set_value(new_bias)
         print(ai.l_out.b.get_value())
         return ai
-
-        # # define a function f that maps an input input_var to an output reaction
-        #
-        # # y is a function that evaluates the network with final layer l_out and input input_var
-        # self.prediction = L.layers.get_output(self.l_out)
-        # self.evaluate_prediction = T.function([self.input_var], self.prediction)
-        #
-        # # collect all parameters that can be trained
-        # self.params = L.layers.get_all_params(self.l_out, trainable=True)
-        #
-        # self.score = T.tensor.vector('targets')
-        # self.loss = L.objectives.squared_error(self.prediction, self.score)
-        #
-        # self.loss = self.loss.mean()
-        #
-        # self.updates = L.updates.sgd(self.loss, self.params, learning_rate=learning_rate)
-        # self.train_fn = T.function([self.input_var, self.score], self.loss, updates=self.updates)
