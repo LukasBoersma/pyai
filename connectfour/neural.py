@@ -17,7 +17,9 @@ class NeuralAI:
     layer_sizes= [3*cf.SIZE_X*cf.SIZE_Y,84,42,cf.SIZE_X],
     learning_rate = 0.01,
     momentum = 0.5,
-    batch_size = 1):
+    batch_size = 1,
+    nonlinearity=L.nonlinearities.sigmoid
+    ):
         # create network
         total_field_size = cf.SIZE_X*cf.SIZE_Y
         self.input_var = T.tensor.matrix('input_var')
@@ -27,16 +29,16 @@ class NeuralAI:
 
         self.l_hidden = []
         #in two-layer case the output layer is connected directly to the input layer
-        self.l_out = L.layers.DenseLayer(self.l_in, num_units=layer_sizes[-1])
+        self.l_out = L.layers.DenseLayer(self.l_in, num_units=layer_sizes[-1], nonlinearity=nonlinearity)
         if len(layer_sizes) > 2:
             #first hidden layer is special as it is connected to input layer
-            self.l_hidden.append( L.layers.DenseLayer(self.l_in, num_units= layer_sizes[1] ) )
+            self.l_hidden.append( L.layers.DenseLayer(self.l_in, num_units= layer_sizes[1], nonlinearity=nonlinearity ) )
             # three layer have been constructed so far:
             # input, first hidden layer, output (output will be changed later)
             for l in range(2,len(layer_sizes)-1):
-                self.l_hidden.append(L.layers.DenseLayer(self.l_hidden[-1], num_units= layer_sizes[l] ))
+                self.l_hidden.append(L.layers.DenseLayer(self.l_hidden[-1], num_units= layer_sizes[l], nonlinearity=nonlinearity ))
 
-            self.l_out = L.layers.DenseLayer(self.l_hidden[-1], num_units=layer_sizes[-1])
+            self.l_out = L.layers.DenseLayer(self.l_hidden[-1], num_units=layer_sizes[-1], nonlinearity=nonlinearity)
 
         # define a function f that maps an input input_var to an output reaction
 
@@ -52,7 +54,7 @@ class NeuralAI:
 
         self.loss = self.loss.mean()
 
-        self.updates = L.updates.nesterov_momentum(self.loss, self.params, learning_rate=learning_rate, momentum=momentum)
+        self.updates = L.updates.nesterov_momentum(self.loss, self.params, learning_rate=learning_rate,momentum=momentum)
         self.train_fn = T.function([self.input_var, self.score], self.loss, updates=self.updates)
 
     def evolve(self):
@@ -71,11 +73,9 @@ class NeuralAI:
     def learn(self, training_data,silent = False):
 
         if not silent:
-            print(len(training_data))
+            print("learning from " + str( len(training_data) ) + ' data points' )
 
         loss_function = T.function([self.input_var, self.score], self.loss)
-
-
 
         for (field, score ) in training_data:
             #print("learning")
@@ -87,11 +87,28 @@ class NeuralAI:
             self.train_fn([field],score)
             #print( "loss after fit: " + str(loss_function([field],score ))  )
 
+    def learn_json(self, filename):
+        # if filename.endswith('.gz'):
+        #     f = gzip.open(filename,'r')
+        # else:
+        #     f = open(filename,'r')
+
+        samples = NeuralAI.load_samples_json(filename)
+        print("Learning from "  + str(len(samples['Inputs'])) + ' samples.')
+        merged_in_out = zip(samples['Inputs'],samples['Outputs'])
+        #for i in range(len(samles['Inputs'])):
+        #    self.train_fn([field],score)
+        self.learn(merged_in_out,silent=True )
+
+
     def learn_epoch(self, training_data, epochs):
         print("learning " + str(epochs) + " epochs")
         for i in range(epochs):
             random.shuffle(training_data)
             self.learn(training_data, silent = True)
+
+    def evaluate(self,input):
+        return self.evaluate_prediction([input])
 
     # see https://gist.github.com/senbon/70adf5410950c0dc882b
     # and https://github.com/Lasagne/Lasagne/issues/7
@@ -148,7 +165,7 @@ class NeuralAI:
         print('Layer sizes' + str(layer_sizes) )
 
         # mild warning, this learning parameters could cause problems when comparing this implementation to c#
-        ai = NeuralAI(layer_sizes=layer_sizes,learning_rate=0.01,momentum=0,batch_size=1)
+        ai = NeuralAI(layer_sizes=layer_sizes,learning_rate=0.005,momentum=0,batch_size=1)
 
         #import ipdb;ipdb.set_trace()
         # sets weights in last layer of network
@@ -176,3 +193,12 @@ class NeuralAI:
         new_bias = [0]*layer_sizes[-1]
         ai.l_out.b.set_value(new_bias)
         return ai
+
+    @staticmethod
+    def load_samples_json(filename):
+        #if '.gz' in filename:
+        if filename.endswith('.gz'):
+            f = gzip.open(filename,'r')
+        else:
+            f = open(filename,'r')
+        return json.load(f)
